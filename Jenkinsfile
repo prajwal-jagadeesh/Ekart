@@ -40,7 +40,7 @@ pipeline {
         
         stage('OWASP DC') {
             steps {
-                dependencyCheck additionalArguments: ' --scan ./', odcInstallation: 'DC'
+                dependencyCheck additionalArguments: ' --scan ./', odcInstallation: 'DP-Check'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
@@ -51,18 +51,10 @@ pipeline {
             }
         }
         
-        stage('Deploy to Nexus') {
-            steps {
-                withMaven(globalMavenSettingsConfig: 'global-maven', jdk: 'jdk17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
-                    sh 'mvn deploy -DskipTests=true'
-                }
-            }
-        }
-        
         stage('Build & Tag Docker Image') {
             steps {
                script {
-                   withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+                   withDockerRegistry(credentialsId: 'docker-hub', toolName: 'docker') {
                        sh "docker build -t prajwaldevops01/ekart:latest -f docker/Dockerfile ."
                    }
                }
@@ -79,7 +71,7 @@ pipeline {
         stage('Docker Push') {
             steps {
                script {
-                   withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+                   withDockerRegistry(credentialsId: 'docker-hub', toolName: 'docker') {
                        sh "docker push prajwaldevops01/ekart:latest"
                    }
                }
@@ -87,14 +79,13 @@ pipeline {
             }
         }
         
-        stage('Kubernetes Deploy') {
+        stage('Deploy to EKS') {
             steps {
-                withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://172.31.40.181:6443') {
+                withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://ADAC17809DF934C165E921056D492F81.gr7.ap-south-1.eks.amazonaws.com') {
                     sh "kubectl apply -f deploymentservice.yml -n webapps"
                     sh "kubectl get svc -n webapps"
                 }
             }
         }
-        
     }
 }
