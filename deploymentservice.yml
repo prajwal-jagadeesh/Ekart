@@ -35,22 +35,3 @@ spec:
       targetPort: 8070 # The port exposed by the service
   type: LoadBalancer # type of the service.
 
----
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: prajwal-ingress
-spec:
-  rules:
-  - host: prajwal.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: ekart-ssvc
-            port:
-              number: 80
-
